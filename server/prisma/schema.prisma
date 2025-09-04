@@ -1,0 +1,73 @@
+// ---------- generator & datasource ----------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- enums ----------
+enum Role {
+  ADMIN
+  USER
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+}
+
+// ---------- models ----------
+model User {
+  id            String        @id @db.Char(36) // Supabase user UUID (matches auth user.id)
+  email         String        @unique
+  fullName      String?
+  role          Role          @default(USER)
+  createdAt     DateTime      @default(now())
+  tasksCreated  Task[]        @relation("TasksCreated")
+  tasksAssigned Task[]        @relation("TasksAssigned")
+  messages      TaskMessage[]
+
+  @@index([email])
+}
+
+model Task {
+  id             String     @id @default(uuid()) @db.Char(36)
+  title          String
+  description    String?
+  status         TaskStatus @default(PENDING)
+  // Assignee can be removed; keep task but unassigned
+  assignedUser   User?      @relation("TasksAssigned", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  assignedUserId String?    @db.Char(36)
+
+  // Creator can't be deleted if tasks still reference them (prevents orphan creator)
+  createdBy   User   @relation("TasksCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById String @db.Char(36)
+
+  deadline  DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  TaskMessage[]
+
+  @@index([assignedUserId])
+  @@index([createdById])
+  @@index([status])
+  @@index([deadline])
+  @@index([createdAt])
+}
+
+model TaskMessage {
+  id     String @id @default(uuid()) @db.Char(36)
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId String @db.Char(36)
+
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String @db.Char(36)
+
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([taskId, createdAt])
+}
