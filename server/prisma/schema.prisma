@@ -19,6 +19,12 @@ enum TaskStatus {
   COMPLETED
 }
 
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
 // ---------- models ----------
 model User {
   id            String        @id @db.Char(36) // Supabase user UUID (matches auth user.id)
@@ -29,6 +35,10 @@ model User {
   tasksCreated  Task[]        @relation("TasksCreated")
   tasksAssigned Task[]        @relation("TasksAssigned")
   messages      TaskMessage[]
+
+  passwordHash  String       @db.VarChar(255)
+
+  requests      TaskRequest[]
 
   @@index([email])
 }
@@ -51,6 +61,8 @@ model Task {
   updatedAt DateTime      @updatedAt
   messages  TaskMessage[]
 
+  requests  TaskRequest[]
+
   @@index([assignedUserId])
   @@index([createdById])
   @@index([status])
@@ -71,3 +83,21 @@ model TaskMessage {
 
   @@index([taskId, createdAt])
 }
+
+model TaskRequest {
+  id           String        @id @default(uuid()) @db.Char(36)
+  task         Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId       String        @db.Char(36)
+  requester    User          @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterId  String        @db.Char(36)
+  status       RequestStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+
+  @@index([taskId, status, createdAt])
+  @@index([requesterId, status, createdAt])
+
+  // Prevent duplicate *pending* requests by the same user for the same task.
+  // (Allows one PENDING; once APPROVED/DENIED, another PENDING could be created later if you want.)
+  @@unique([taskId, requesterId, status])
+}
+

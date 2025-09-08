@@ -14,9 +14,9 @@ export async function ensureProfile(req: Request, res: Response, next: NextFunct
   if (!existing) {
     // Create requires a concrete string for email; your tokens include it, but guard anyway
     const createData: Prisma.UserCreateInput = {
-      id: auth.userId,
-      email: auth.email ?? `${auth.userId}@placeholder.local`, // pick a fallback you prefer
-      // role will use schema default (e.g., 'USER') if you set it in prisma schema
+        id: auth.userId,
+        email: auth.email ?? `${auth.userId}@placeholder.local`,
+        passwordHash: ''
     }
     await prisma.user.create({ data: createData })
   } else {

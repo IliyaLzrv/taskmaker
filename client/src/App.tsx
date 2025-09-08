@@ -3,6 +3,7 @@ import axios from 'axios'
 import { api, syncAuthToken } from './lib/api'
 import { supabase } from './lib/supabase'
 
+
 type AuthInfo = { userId: string; email?: string; role?: string } | null
 export type Task = {
   id: string

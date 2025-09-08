@@ -7,6 +7,11 @@ import { router as taskRouter } from './routes/tasks'
 import { authMiddleware } from './middleware/auth'
 import { ensureProfile } from './middleware/ensureProfile'
 import { prisma } from './db'
+import { router as messagesRouter } from './routes/messages'
+import { router as adminRouter } from './routes/admin'
+import 'dotenv/config'
+
+
 
 const allowed = (process.env.FRONTEND_ORIGINS ?? 'http://localhost:5173')
   .split(',')
@@ -33,6 +38,7 @@ app.use(express.json())
 app.use(morgan('dev'))
 
 app.use('/api/tasks', authMiddleware, ensureProfile, taskRouter)
+app.use('/api/tasks/:id/messages', authMiddleware, ensureProfile, messagesRouter)
 app.get('/api/debug/db', async (_req, res) => {
   try {
     const [users, tasks] = await Promise.all([
@@ -50,10 +56,11 @@ app.get('/api/debug/db', async (_req, res) => {
   }
 })
 
-
+app.use('/api/tasks', authMiddleware, ensureProfile, taskRouter)
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
 app.use('/api/auth', authRouter)
+app.use('/api/admin', authMiddleware, ensureProfile, adminRouter)
 // protect all task routes with auth
 app.use('/api/tasks', authMiddleware, taskRouter)
 
