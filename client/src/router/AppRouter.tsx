@@ -1,25 +1,25 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import AppLayout from "../components/Layout/AppLayout";
+import { Routes, Route, Navigate } from 'react-router-dom';
+import AppLayout from '../components/Layout/AppLayout';
 
-import LoginPage from "../pages/LoginPage";
-import RegisterPage from "../pages/RegisterPage";
-import ProfilePage from "../pages/User/ProfilePage";
-import AssignedTasksPage from "../pages/User/AssignedTasksPage";
-import CompletedHistoryPage from "../pages/User/CompletedHistoryPage";
-import TaskDetailPage from "../pages/User/TaskDetailPage";
-import BrowseTasksPage from "../pages/User/BrowseTasksPage";
-import AdminDashboardPage from "../pages/Admin/AdminDashboardPage";
-import CreateTaskPage from "../pages/Admin/CreateTaskPage";
-import UsersPage from "../pages/Admin/UsersPage";
-import RequestsPage from "../pages/Admin/RequestsPage";
+import LoginPage from '../pages/LoginPage';
+import RegisterPage from '../pages/RegisterPage';
+import ProfilePage from '../pages/User/ProfilePage';
+import AssignedTasksPage from '../pages/User/AssignedTasksPage';
+import CompletedHistoryPage from '../pages/User/CompletedHistoryPage';
+import TaskDetailPage from '../pages/User/TaskDetailPage';
+import BrowseTasksPage from '../pages/User/BrowseTasksPage';
+import AdminDashboardPage from '../pages/Admin/AdminDashboardPage';
+import CreateTaskPage from '../pages/Admin/CreateTaskPage';
+import UsersPage from '../pages/Admin/UsersPage';
+import RequestsPage from '../pages/Admin/RequestsPage';
 
-import ProtectedRoute from "../components/ProtectedRoute";
-import { useAuth } from "../context/AuthContext";
+import ProtectedRoute from '../components/ProtectedRoute';
+import { useAuth } from '../context/AuthContext';
 
 function HomeRedirect() {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  return <Navigate to={user.role === "ADMIN" ? "/admin" : "/tasks"} replace />;
+  return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/tasks'} replace />;
 }
 
 export default function AppRouter() {
@@ -31,40 +31,76 @@ export default function AppRouter() {
       <Route element={<AppLayout />}>
         <Route
           path="/tasks"
-          element={<ProtectedRoute><AssignedTasksPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <AssignedTasksPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/tasks/browse"
-          element={<ProtectedRoute><BrowseTasksPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <BrowseTasksPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/tasks/done"
-          element={<ProtectedRoute><CompletedHistoryPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <CompletedHistoryPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/tasks/:id"
-          element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <TaskDetailPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/me"
-          element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="/admin"
-          element={<ProtectedRoute role="ADMIN"><AdminDashboardPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute role="ADMIN">
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/admin/create"
-          element={<ProtectedRoute role="ADMIN"><CreateTaskPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute role="ADMIN">
+              <CreateTaskPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/admin/users"
-          element={<ProtectedRoute role="ADMIN"><UsersPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute role="ADMIN">
+              <UsersPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/admin/requests"
-          element={<ProtectedRoute role="ADMIN"><RequestsPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute role="ADMIN">
+              <RequestsPage />
+            </ProtectedRoute>
+          }
         />
 
         <Route path="/" element={<HomeRedirect />} />
