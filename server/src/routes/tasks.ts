@@ -7,8 +7,6 @@ import type { Prisma, TaskStatus } from '@prisma/client'
 
 export const router = Router()
 
-
-// ---- Zod schemas (add these; they were missing) ----
 const TaskCreate = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
@@ -20,8 +18,8 @@ const TaskUpdate = z.object({
   title: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
   status: z.enum(['PENDING', 'COMPLETED']).optional(),
-  assignedUserId: z.string().uuid().nullable().optional(), // still supported
-  assigneeEmail: z.string().email().nullable().optional(),  // NEW: admin can set by email
+  assignedUserId: z.string().uuid().nullable().optional(), 
+  assigneeEmail: z.string().email().nullable().optional(),  
   deadline: z.string().datetime().nullable().optional(),
 })
 
@@ -33,7 +31,7 @@ const TaskSelect = {
 
 const ParamId = z.object({ id: z.string().uuid() })
 
-// List tasks I can see (admin: all; user: createdBy or assigned to me)
+
 router.get('/', async (req, res) => {
   const { auth } = req as AuthedRequest
   const tasks = await prisma.task.findMany({
@@ -53,7 +51,7 @@ router.get('/', async (req, res) => {
       createdAt: true,
       updatedAt: true,
       createdById: true,
-      assignedUserId: true, // <-- IMPORTANT for client-side filtering
+      assignedUserId: true, 
       assignedUser: { select: { id: true, email: true } },
       createdBy:   { select: { id: true, email: true } },
     },
@@ -63,7 +61,7 @@ router.get('/', async (req, res) => {
 
 
 
-// Create task (ADMIN only)
+
 router.post('/', async (req, res) => {
   const { auth } = req as AuthedRequest
   if (!auth?.userId) return res.status(401).json({ message: 'Not authenticated' })
@@ -88,7 +86,7 @@ router.post('/', async (req, res) => {
     deadlineDate = d
   }
 
-  // Only ADMINs can assign at creation time
+  
   let assignedUserId: string | null = null
   if (assigneeEmail && auth.role === 'ADMIN') {
     const assignee = await prisma.user.findUnique({ where: { email: assigneeEmail } })
@@ -103,15 +101,15 @@ router.post('/', async (req, res) => {
       title: title.trim(),
       description: (description ?? '')?.trim() || null,
       deadline: deadlineDate,
-      createdById: auth.userId,        // REQUIRED by your schema
-      assignedUserId,                  // null unless admin assigned
+      createdById: auth.userId,        
+      assignedUserId,                  
     },
   })
 
   return res.status(201).json(task)
 })
 
-// BROWSE all PENDING tasks (any authenticated user)
+
 router.get('/browse', async (_req, res) => {
   const tasks = await prisma.task.findMany({
     where: { status: 'PENDING' },
@@ -124,8 +122,6 @@ router.get('/browse', async (_req, res) => {
   res.json(tasks)
 })
 
-// Get by id (only if admin/creator/assignee)
-// replace your GET /:id with this version
 router.get('/:id', async (req, res) => {
   const { auth } = req as AuthedRequest
 
@@ -166,7 +162,6 @@ router.patch('/:id', async (req: Request, res: Response) => {
   const isAdmin = me?.role === 'ADMIN'
 
   if (isAdmin) {
-    // Build update data only from provided fields
     const data: Prisma.TaskUpdateInput = {}
 
     if (parse.data.title !== undefined) data.title = parse.data.title
@@ -176,7 +171,6 @@ router.patch('/:id', async (req: Request, res: Response) => {
       data.deadline = parse.data.deadline ? new Date(parse.data.deadline) : null
     }
 
-    // Assignment priority: assigneeEmail (if provided) > assignedUserId (if provided)
     if (parse.data.assigneeEmail !== undefined) {
       if (parse.data.assigneeEmail === null || parse.data.assigneeEmail.trim() === '') {
         data.assignedUser = { disconnect: true }
@@ -202,7 +196,6 @@ router.patch('/:id', async (req: Request, res: Response) => {
     return res.json({ task: updated })
   }
 
-  // Non-admin: only the current assignee can change status
   if (task.assignedUserId !== uid) {
     return res.status(403).json({ error: 'Forbidden' })
   }
@@ -218,14 +211,12 @@ router.patch('/:id', async (req: Request, res: Response) => {
 })
 
 
-// Delete task (ADMIN only)
 router.delete('/:id', requireRole('ADMIN'), async (req: Request, res: Response) => {
   const { id } = ParamId.parse(req.params)
   await prisma.task.delete({ where: { id } })
   res.json({ ok: true })
 })
 
-// REQUEST a task (user asks to be assigned)
 router.post('/:id/requests', async (req, res) => {
   const { auth } = req as AuthedRequest
   const { id } = req.params
@@ -241,7 +232,6 @@ router.post('/:id/requests', async (req, res) => {
     })
     return res.status(201).json(reqRow)
   } catch (e: any) {
-    // unique constraint on (taskId, requesterId, status) blocks duplicates
     return res.status(409).json({ message: 'You already requested this task' })
   }
 })

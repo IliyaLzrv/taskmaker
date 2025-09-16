@@ -1,18 +1,32 @@
 import { Navigate, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 type Props = { children: React.ReactNode; role?: 'ADMIN' | 'USER' }
 
 export default function ProtectedRoute({ children, role }: Props) {
-  const { user, loading } = useAuth()
+  const { user, authToken, loading, refreshMe } = useAuth()
   const location = useLocation()
+  const [checking, setChecking] = useState(false)
+  const triedRef = useRef(false)
 
-  if (loading) return null // or a spinner
+  
+  useEffect(() => {
+    if (!loading && authToken && !user && !triedRef.current) {
+      triedRef.current = true
+      setChecking(true)
+      refreshMe().finally(() => setChecking(false))
+    }
+  }, [loading, authToken, user, refreshMe])
 
-  // not logged in -> go to login, remember where we came from
-  if (!user) return <Navigate to="/login" replace state={{ from: location }} />
+  
+  if (loading || checking) return <div className="card">Loading…</div>
 
-  // role mismatch -> send to the right home for their role
+  
+  if (!authToken || !user) {
+    return <Navigate to="/login" replace state={{ from: location }} />
+  }
+
   if (role && user.role !== role) {
     return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/tasks'} replace />
   }

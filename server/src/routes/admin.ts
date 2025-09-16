@@ -5,21 +5,19 @@ import { z } from 'zod'
 
 export const router = Router()
 
-// GET /api/admin/users
 router.get('/users', async (_req, res) => {
   const users = await prisma.user.findMany({
     select: { id: true, email: true, role: true },
     orderBy: { createdAt: 'desc' },
   })
-  res.json(users)     // <-- plain array (not { items })
+  res.json(users)     
 })
 
 const PatchUserRole = z.object({ role: z.enum(['ADMIN', 'USER']) })
-const ParamId = z.object({ id: z.string().uuid() }) // <-- validate id once
+const ParamId = z.object({ id: z.string().uuid() }) 
 
-// PATCH /api/admin/users/:id
 router.patch('/users/:id', requireRole('ADMIN'), async (req: Request, res: Response) => {
-  const { id } = ParamId.parse(req.params) // <-- now `id` is a string
+  const { id } = ParamId.parse(req.params) 
   const parse = PatchUserRole.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
 
@@ -43,7 +41,7 @@ router.get('/tasks', async (_req, res) => {
   res.json(tasks)
 })
 
-// PENDING REQUESTS (admin)
+
 router.get('/requests', async (_req, res) => {
   const reqs = await prisma.taskRequest.findMany({
     where: { status: 'PENDING' },
@@ -56,7 +54,7 @@ router.get('/requests', async (_req, res) => {
   res.json(reqs)
 })
 
-// APPROVE / DENY REQUEST
+
 router.patch('/requests/:id', async (req, res) => {
   const { id } = req.params
   const { action } = req.body as { action: 'APPROVE' | 'DENY' }
@@ -73,7 +71,7 @@ router.patch('/requests/:id', async (req, res) => {
     return res.json(upd)
   }
 
-  // APPROVE
+  
   if (tr.task.assignedUserId && tr.task.assignedUserId !== tr.requesterId) {
     return res.status(409).json({ message: 'Task already assigned' })
   }
@@ -87,7 +85,7 @@ router.patch('/requests/:id', async (req, res) => {
       where: { id },
       data: { status: 'APPROVED' },
     }),
-    // optionally: mark other PENDING requests for same task as DENIED
+    
     prisma.taskRequest.updateMany({
       where: { taskId: tr.taskId, status: 'PENDING', NOT: { id } },
       data: { status: 'DENIED' },

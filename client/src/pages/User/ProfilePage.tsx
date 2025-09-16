@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { api } from '../../lib/api'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext' 
 
-type ProfileResp = {
-  auth: { userId: string; email?: string; role?: 'ADMIN' | 'USER' }
-  profile: { id: string; email: string; role: 'ADMIN' | 'USER' }
-}
+type Me = { id: string; email: string; role: 'ADMIN' | 'USER' }
+
 type Task = {
   id: string
   title: string
@@ -17,46 +15,57 @@ type Task = {
 }
 
 export default function ProfilePage() {
-  const [me, setMe] = useState<ProfileResp | null>(null)
+  const { authFetch, session } = useAuth()
+  const [me, setMe] = useState<Me | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    (async () => {
+    let mounted = true
+    ;(async () => {
       try {
         setErr(null); setLoading(true)
-        const [meRes, tRes] = await Promise.all([
-          api.get<ProfileResp>('/api/auth/me'),
-          api.get<Task[]>('/api/tasks'),
-        ])
-        setMe(meRes.data)
-        setTasks(Array.isArray(tRes.data) ? tRes.data : [])
+        const meRes = await authFetch('/api/users/me')
+        if (!meRes.ok) throw new Error('Failed to load profile')
+        const meJson = (await meRes.json()) as Me
+
+        const tRes = await authFetch('/api/tasks')
+        if (!tRes.ok) throw new Error('Failed to load tasks')
+        const tJson = (await tRes.json()) as Task[]
+
+        if (mounted) {
+          setMe(meJson)
+          setTasks(Array.isArray(tJson) ? tJson : [])
+        }
       } catch (e) {
-        setErr(e instanceof Error ? e.message : 'Failed to load profile')
-      } finally { setLoading(false) }
+        if (mounted) setErr(e instanceof Error ? e.message : 'Failed to load profile')
+      } finally {
+        if (mounted) setLoading(false)
+      }
     })()
-  }, [])
+    return () => { mounted = false }
+  }, [authFetch, session]) 
 
   const stats = useMemo(() => {
-    const assigned = tasks.filter(t => t.assignedUserId === me?.profile.id)
-    const created  = tasks.filter(t => t.createdById === me?.profile.id)
+    if (!me) return { assignedCount: 0, createdCount: 0, pending: 0, done: 0, assigned: [] as Task[] }
+    const assigned = tasks.filter(t => t.assignedUserId === me.id)
+    const created  = tasks.filter(t => t.createdById === me.id)
     const pending  = assigned.filter(t => t.status !== 'COMPLETED').length
     const done     = assigned.filter(t => t.status === 'COMPLETED').length
     return { assignedCount: assigned.length, createdCount: created.length, pending, done, assigned }
-  }, [tasks, me?.profile.id])
+  }, [tasks, me])
 
   if (err) return <div className="card" style={{color:'var(--err)'}}>{err}</div>
   if (loading || !me) return <div className="card">Loading…</div>
 
-  const { profile } = me
   return (
     <section className="stack">
       <div className="card stack">
         <div className="h2">Profile</div>
-        <div><b>Email:</b> {profile.email}</div>
-        <div><b>Role:</b> {profile.role}</div>
-        <div><b>ID:</b> <span className="mono">{profile.id}</span></div>
+        <div><b>Email:</b> {me.email}</div>
+        <div><b>Role:</b> {me.role}</div>
+        <div><b>ID:</b> <span className="mono">{me.id}</span></div>
       </div>
 
       <div className="row">

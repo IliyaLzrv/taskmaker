@@ -19,26 +19,46 @@ export default function LoginPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    if (busy) return 
     setBusy(true); setErr(null)
     try {
-      const u = await login(email, password) // returns User
+      const u = await login(email.trim(), password)
       const isBadFrom = !from || ['/login', '/register', '/'].includes(from)
       const target = isBadFrom ? (u.role === 'ADMIN' ? '/admin' : '/tasks') : from
       nav(target, { replace: true })
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Login failed')
-    } finally {
-      setBusy(false)
+      setBusy(false) 
     }
   }
 
   return (
     <section className="card stack">
       <div className="h2">Login</div>
-      <form className="row" onSubmit={submit}>
-        <input className="input" placeholder="email" value={email} onChange={(e)=>setEmail(e.target.value)} />
-        <input className="input" type="password" placeholder="password" value={password} onChange={(e)=>setPassword(e.target.value)} />
-        <button className="btn primary" disabled={!canSubmit}>{busy ? '...' : 'Sign in'}</button>
+      <form className="row" onSubmit={submit} noValidate>
+        <input
+          className="input"
+          placeholder="email"
+          value={email}
+          onChange={(e)=>setEmail(e.target.value)}
+          type="email"
+          autoComplete="email"
+          disabled={busy}
+          required
+        />
+        <input
+          className="input"
+          type="password"
+          placeholder="password"
+          value={password}
+          onChange={(e)=>setPassword(e.target.value)}
+          autoComplete="current-password"
+          disabled={busy}
+          required
+        />
+        <button className="btn primary" type="submit" disabled={!canSubmit}>
+          {busy ? 'Signing in…' : 'Sign in'}
+        </button>
       </form>
       {err && <div className="small" style={{color:'var(--err)'}}>{err}</div>}
       <p>Don't have an account? <Link to="/register">Register</Link></p>

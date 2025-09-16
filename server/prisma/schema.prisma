@@ -27,7 +27,7 @@ enum RequestStatus {
 
 // ---------- models ----------
 model User {
-  id            String        @id @db.Char(36) // Supabase user UUID (matches auth user.id)
+  id            String        @id @db.Char(36) 
   email         String        @unique
   fullName      String?
   role          Role          @default(USER)
@@ -48,11 +48,11 @@ model Task {
   title          String
   description    String?
   status         TaskStatus @default(PENDING)
-  // Assignee can be removed; keep task but unassigned
+  
   assignedUser   User?      @relation("TasksAssigned", fields: [assignedUserId], references: [id], onDelete: SetNull)
   assignedUserId String?    @db.Char(36)
 
-  // Creator can't be deleted if tasks still reference them (prevents orphan creator)
+  
   createdBy   User   @relation("TasksCreated", fields: [createdById], references: [id], onDelete: Restrict)
   createdById String @db.Char(36)
 
@@ -96,8 +96,6 @@ model TaskRequest {
   @@index([taskId, status, createdAt])
   @@index([requesterId, status, createdAt])
 
-  // Prevent duplicate *pending* requests by the same user for the same task.
-  // (Allows one PENDING; once APPROVED/DENIED, another PENDING could be created later if you want.)
   @@unique([taskId, requesterId, status])
 }
 

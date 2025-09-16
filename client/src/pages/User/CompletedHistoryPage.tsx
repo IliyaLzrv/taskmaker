@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
-import BackButton from '../../components/BackButton'
 
 type Task = {
   id: string
@@ -38,8 +37,6 @@ export default function CompletedHistoryPage() {
   return (
     <section className="stack">
       <header className="row">
-          <BackButton fallback="/tasks" />
-  <div className="right" />
         <h2 className="h2">Completed tasks</h2>
         <div className="right" />
         <Link className="btn ghost" to="/tasks">Back</Link>

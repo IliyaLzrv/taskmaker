@@ -37,13 +37,7 @@ export default function AdminDashboardPage() {
 
   return (
     <section className="stack">
-      <header className="row">
-        <h2 className="h2">Admin Dashboard</h2>
-        <div className="right" />
-        <Link className="btn primary" to="/admin/create">+ Create Task</Link>
-        <Link className="btn ghost" to="/admin/users">Users</Link>
-        <Link className="btn ghost" to="/admin/requests">Requests</Link>
-      </header>
+      
 
       {loading && <div className="card">Loading…</div>}
       {err && <div className="card" style={{ color:'var(--err)' }}>{err}</div>}

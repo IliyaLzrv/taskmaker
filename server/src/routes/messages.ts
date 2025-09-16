@@ -9,9 +9,8 @@ const CreateMessage = z.object({
   body: z.string().min(1, 'Message cannot be empty'),
 })
 
-const ParamId = z.object({ id: z.string().uuid() }) // <-- validate :id
+const ParamId = z.object({ id: z.string().uuid() }) 
 
-// permission check: admin OR creator OR assignee
 async function canAccessTask(taskId: string, uid: string) {
   const [me, task] = await Promise.all([
     prisma.user.findUnique({ where: { id: uid }, select: { role: true } }),
@@ -24,18 +23,17 @@ async function canAccessTask(taskId: string, uid: string) {
   return { ok: isAdmin || isCreator || isAssignee, status: 200 as const }
 }
 
-// GET /api/tasks/:id/messages
 router.get('/', async (req: Request, res: Response) => {
   const { auth } = req as AuthedRequest
   const uid = auth?.userId
   if (!uid) return res.status(401).json({ error: 'Unauthorized' })
 
-  const { id: taskId } = ParamId.parse(req.params) // <-- string
+  const { id: taskId } = ParamId.parse(req.params) 
   const access = await canAccessTask(taskId, uid)
   if (!access.ok) return res.status(access.status).json({ error: access.status === 404 ? 'Not found' : 'Forbidden' })
 
   const messages = await prisma.taskMessage.findMany({
-    where: { taskId }, // <-- string, not undefined
+    where: { taskId }, 
     orderBy: { createdAt: 'asc' },
     select: {
       id: true, body: true, createdAt: true,
@@ -45,13 +43,12 @@ router.get('/', async (req: Request, res: Response) => {
   res.json({ messages })
 })
 
-// POST /api/tasks/:id/messages
 router.post('/', async (req: Request, res: Response) => {
   const { auth } = req as AuthedRequest
   const uid = auth?.userId
   if (!uid) return res.status(401).json({ error: 'Unauthorized' })
 
-  const { id: taskId } = ParamId.parse(req.params) // <-- string
+  const { id: taskId } = ParamId.parse(req.params) 
   const access = await canAccessTask(taskId, uid)
   if (!access.ok) return res.status(access.status).json({ error: access.status === 404 ? 'Not found' : 'Forbidden' })
 
@@ -59,7 +56,7 @@ router.post('/', async (req: Request, res: Response) => {
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
 
   const msg = await prisma.taskMessage.create({
-    data: { taskId, authorId: uid, body: parse.data.body }, // <-- all strings
+    data: { taskId, authorId: uid, body: parse.data.body }, 
     select: {
       id: true, body: true, createdAt: true,
       author: { select: { id: true, email: true } },

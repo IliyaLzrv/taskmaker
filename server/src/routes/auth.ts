@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
-import { signUserToken } from '../utiles/jwt' // keeping your existing path
+import { signUserToken } from '../utiles/jwt' 
 import { randomUUID } from 'crypto'
 import { authMiddleware, type AuthedRequest } from '../middleware/auth'
 
@@ -26,7 +26,7 @@ router.post('/register', async (req, res) => {
     select: { id: true, email: true, role: true },
   })
 
-  const token = await signUserToken(user) // ✅ added await
+  const token = await signUserToken(user) 
   res.status(201).json({ token })
 })
 
@@ -39,7 +39,7 @@ router.post('/login', async (req, res) => {
   if (!ok) return res.status(401).json({ message: 'Invalid credentials' })
 
   const safe = { id: user.id, email: user.email, role: user.role }
-  const token = await signUserToken(safe) // ✅ added await
+  const token = await signUserToken(safe) 
   res.json({ token })
 })
 

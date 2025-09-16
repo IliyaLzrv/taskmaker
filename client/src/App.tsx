@@ -26,7 +26,7 @@ type TaskCreatePayload = {
   title: string
   description?: string
   assignedUserId?: string
-  deadline?: string // ISO
+  deadline?: string 
 }
 type TaskUpdatePayload = {
   title?: string
@@ -71,10 +71,10 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
-  // create form state
+
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [deadline, setDeadline] = useState('') // datetime-local
+  const [deadline, setDeadline] = useState('') 
   const [assignedUserId, setAssignedUserId] = useState('')
 
   const isLoggedIn = !!auth?.userId
@@ -94,7 +94,6 @@ const fetchTasks = useCallback(async () => {
 
 const refreshAll = useCallback(async () => {
   setErr(null)
-  // quick health with a small timeout helps surface server-down situations
   try {
     const res = await api.get<HealthRes>('/health', { timeout: 3000 })
     setHealth(res.data.ok ? 'ok' : 'not ok')
@@ -125,7 +124,6 @@ const refreshAll = useCallback(async () => {
       if (assignedUserId) payload.assignedUserId = assignedUserId
 
       const res = await api.post<CreateTaskRes>('/tasks', payload)
-      // reset & prepend
       setTitle('')
       setDescription('')
       setDeadline('')
@@ -133,7 +131,6 @@ const refreshAll = useCallback(async () => {
       setTasks((t) => [res.data.task, ...t])
     } catch (e) {
       const msg = toMessage(e)
-      // Likely admin restriction or zod error; show clearly
       setErr(msg || 'Failed to create task.')
     } finally {
       setLoading(false)
@@ -164,39 +161,32 @@ const refreshAll = useCallback(async () => {
   setErr(null)
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) { setErr(error.message); return }
-  // ensure axios has the fresh token before the first API call
   await syncAuthToken()
   await refreshAll()
 }
 
 async function logout() {
   await supabase.auth.signOut().catch(() => {})
-  await syncAuthToken()  // clear token for axios immediately
-  // instant UI update
+  await syncAuthToken() 
   setAuth(null); setTasks([]); setErr(null)
 }
 
 
 
   useEffect(() => {
-    // initial
     refreshAll()
 
-    // Supabase auth changes (login/logout/refresh/initial)
     const authChanged = () => refreshAll()
     window.addEventListener('app:auth-changed', authChanged)
 
-    // 401 from API → force login view (quietly)
     const unauthorized = () => {
       setAuth(null)
       setTasks([])
-      setErr(null) // don't show "Session expired" on first load / logout
+      setErr(null) 
     }
     window.addEventListener('app:unauthorized', unauthorized)
 
-    // Also sync across tabs via Supabase (optional but nice)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      // We already get app:auth-changed; this keeps other tabs in sync too
     })
 
     return () => {

@@ -8,7 +8,7 @@ export default function CreateTaskPage() {
   const { isAdmin } = useAuth()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [deadline, setDeadline] = useState<string>('') // HTML datetime-local value
+  const [deadline, setDeadline] = useState<string>('') 
   const [assigneeEmail, setAssigneeEmail] = useState('')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -28,11 +28,9 @@ export default function CreateTaskPage() {
       } = {
         title: title.trim(),
         description: description.trim() || null,
-        // send the raw datetime-local string; server will parse
         deadline: deadline || null,
       }
 
-      // only admins can assign; don’t send this for normal users
       const email = assigneeEmail.trim()
       if (isAdmin && email) payload.assigneeEmail = email
 

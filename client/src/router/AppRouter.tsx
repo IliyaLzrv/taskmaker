@@ -3,13 +3,11 @@ import AppLayout from "../components/Layout/AppLayout";
 
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
-
 import ProfilePage from "../pages/User/ProfilePage";
 import AssignedTasksPage from "../pages/User/AssignedTasksPage";
 import CompletedHistoryPage from "../pages/User/CompletedHistoryPage";
 import TaskDetailPage from "../pages/User/TaskDetailPage";
 import BrowseTasksPage from "../pages/User/BrowseTasksPage";
-
 import AdminDashboardPage from "../pages/Admin/AdminDashboardPage";
 import CreateTaskPage from "../pages/Admin/CreateTaskPage";
 import UsersPage from "../pages/Admin/UsersPage";
@@ -25,18 +23,12 @@ function HomeRedirect() {
 }
 
 export default function AppRouter() {
-
-
-  
   return (
     <Routes>
-      {/* Wrap everything in the layout so the header/nav is always present */}
-      <Route element={<AppLayout />}>
-        {/* Public */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
-        {/* User */}
+      <Route element={<AppLayout />}>
         <Route
           path="/tasks"
           element={<ProtectedRoute><AssignedTasksPage /></ProtectedRoute>}
@@ -58,7 +50,6 @@ export default function AppRouter() {
           element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
         />
 
-        {/* Admin */}
         <Route
           path="/admin"
           element={<ProtectedRoute role="ADMIN"><AdminDashboardPage /></ProtectedRoute>}
@@ -76,7 +67,6 @@ export default function AppRouter() {
           element={<ProtectedRoute role="ADMIN"><RequestsPage /></ProtectedRoute>}
         />
 
-        {/* Default */}
         <Route path="/" element={<HomeRedirect />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

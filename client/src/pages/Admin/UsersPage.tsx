@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import BackButton from '../../components/BackButton';
+
 
 type User = { id: string; email: string; role: 'ADMIN' | 'USER' };
 
@@ -12,7 +12,6 @@ export default function UsersPage() {
   async function load() {
     setErr(null); setLoading(true);
     try {
-      // Expecting GET /api/admin/users -> User[]
       const {data} = await api.get('/api/admin/users');
       setUsers(Array.isArray(data) ? data : (data?.items ?? data?.users ?? []))
     } catch (e) {
@@ -34,8 +33,7 @@ export default function UsersPage() {
   return (
     <section className="stack">
       <header className="row">
-          <BackButton fallback="/tasks" />
-  <div className="right" />
+          
         <h2 className="h2">Users</h2>
         <div className="right" />
         <button className="btn ghost" onClick={load}>Refresh</button>

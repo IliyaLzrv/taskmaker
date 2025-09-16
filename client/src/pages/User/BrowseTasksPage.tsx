@@ -42,7 +42,7 @@ export default function BrowseTasksPage() {
     setRequesting(id)
     try {
       await api.post(`/api/tasks/${id}/requests`)
-      setTasks(prev => prev.filter(t => t.id !== id)) // optimistic remove
+      setTasks(prev => prev.filter(t => t.id !== id)) 
       alert('Request sent!')
     } catch (e: unknown) {
       alert(getErrorMessage(e))
