@@ -15,10 +15,10 @@ Includes authentication, global state, CRUD for tasks, deadlines, and per-task Q
 **Backend**
 - Node.js + Express
 - Prisma ORM
-- JWT Authentication (Bearer / httpOnly Cookie)
+- JWT Authentication (Bearer or httpOnly Cookie)
 
 **Database**
-- MySQL (Docker for local, PlanetScale/Railway for production)
+- MySQL (Docker for local development)
 
 **Other**
 - zod (validation)  
@@ -86,6 +86,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+
   adminer:
     image: adminer
     restart: unless-stopped
@@ -96,23 +97,30 @@ volumes:
   mysql_data:
 Run:
 docker compose up -d
-DB: mysql://appuser:apppass@127.0.0.1:3306/taskmaker
+DB connection: mysql://appuser:apppass@127.0.0.1:3306/taskmaker
 Adminer UI: http://localhost:8080
 3️⃣ Environment Variables
-📌 /server/.env
+Create /server/.env:
+# Prisma connection (MySQL)
 DATABASE_URL="mysql://appuser:apppass@127.0.0.1:3306/taskmaker"
 
+# Auth
 JWT_SECRET="replace_with_strong_secret"
 JWT_EXPIRES_IN="7d"
 
+# CORS
 CORS_ORIGIN="http://localhost:5173"
+
+# Server
 PORT=4000
 NODE_ENV=development
 
+# Cookie mode flags (only used if you enable cookie auth)
 COOKIE_SECURE=false
 COOKIE_SAME_SITE=lax
-📌 /client/.env
+Create /client/.env:
 VITE_API_URL="http://localhost:4000"
+After editing .env files, restart the dev servers.
 4️⃣ Install & Run
 Backend
 cd server
@@ -127,9 +135,9 @@ Frontend → http://localhost:5173
 API → http://localhost:4000
 🔧 Useful Commands
 Prisma
-npx prisma migrate dev     # run migrations
+npx prisma migrate dev     # run migrations (dev)
+npx prisma migrate deploy  # apply migrations (prod-like)
 npx prisma studio          # open DB explorer
-npx prisma migrate deploy  # deploy migrations (prod)
 Backend
 npm run dev    # dev server with TS
 npm run build  # compile TypeScript
@@ -142,7 +150,7 @@ npm run preview   # preview build
 Auth
 POST /auth/register
 POST /auth/login
-POST /auth/logout
+POST /auth/logout (if cookie mode)
 GET /me
 Tasks
 GET /tasks
@@ -152,15 +160,17 @@ DELETE /tasks/:id (Admin)
 Q&A
 GET /tasks/:id/qa
 POST /tasks/:id/qa (User ask / Admin answer)
+Protected routes require a valid JWT (Bearer or cookie). Admin routes enforce role === 'ADMIN'.
 🔐 Authentication Options
 Option A: Bearer Token (localStorage)
-Store accessToken in localStorage
-Set axios Authorization: Bearer <token>
-⚠️ Simpler but less secure (XSS risk).
-Option B: httpOnly Cookie (Recommended)
-API sets Set-Cookie with httpOnly
-Client uses axios.defaults.withCredentials = true
-Express CORS:
+On login, API returns accessToken.
+Client stores it in localStorage and sets Authorization: Bearer <token> on fetch/axios.
+⚠️ Simpler but less secure (XSS risk) — fine for dev.
+Option B: httpOnly Cookie (Recommended for Prod)
+Server sets Set-Cookie with httpOnly.
+Client uses fetch(..., { credentials: 'include' }) or axios.defaults.withCredentials = true.
+Express CORS must allow credentials and exact origin.
+Express CORS example:
 app.use(cors({
   origin: process.env.CORS_ORIGIN,
   credentials: true,
@@ -172,35 +182,33 @@ res.cookie("accessToken", token, {
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
-🌐 Deployment (Live Demo)
-Recommended Setup
-Database → PlanetScale / Railway (MySQL)
-API → Render (Node.js)
-Client → Vercel
-Steps
-Provision MySQL DB → copy connection string → DATABASE_URL.
-Deploy API on Render:
-Root: /server
-Build:
-npm install && npx prisma migrate deploy && npm run build
-Start:
-npm start
-Env vars: DATABASE_URL, JWT_SECRET, CORS_ORIGIN, COOKIE_SECURE=true, COOKIE_SAME_SITE=none
-Deploy client on Vercel:
-Root: /client
-Env var:
-VITE_API_URL=<Render API URL>
-🐞 Troubleshooting
-Login loops / refreshes page → Add e.preventDefault() in login form and use navigate('/app').
-Navbar shows before login → Render only when !loading && isAuthenticated.
-401 in production (cookies) → Use SameSite=None; Secure, HTTPS, and withCredentials: true.
+🌉 Global State & Routing
+AuthContext tracks { user, role, isAuthenticated, loading }.
+On app mount, call /me to rehydrate auth from token/cookie.
+ProtectedRoute waits for loading === false before redirecting.
+Hide Navbar until loading === false && isAuthenticated.
+🛡️ Security Notes
+Passwords hashed with bcrypt.
+JWT signed with strong JWT_SECRET.
+Input validation on server (zod).
+CORS locked to known origins.
+Avoid storing sensitive data in localStorage in production.
 📌 Key Decisions & Rationale
 React + Vite + shadcn/ui → Fast DX, consistent UI, accessible components.
-Express + Prisma → Lightweight backend with type safety.
-MySQL (Docker) → Reproducible dev setup, easy to reset.
-JWT Auth → Flexible, secure, works across hosts.
-React Context → Simple global state for auth & roles.
-📄 License
+Express + Prisma → Lightweight backend with type safety and clear DB migrations.
+MySQL via Docker (local) → Reproducible local environment with easy resets.
+JWT Auth → Flexible and host-agnostic.
+React Context → Simple global state for auth/roles without extra libs.
+🐞 Troubleshooting
+Login loops / refreshes page
+Ensure login form does e.preventDefault() and uses SPA navigation (navigate('/app')).
+Ensure ProtectedRoute waits for loading === false.
+Hydrate auth on mount by calling /me before rendering protected routes.
+“Failed to fetch”
+Check VITE_API_URL → http://localhost:4000 for local dev.
+Make sure API is running and responding at /api/health (add a simple route if needed).
+For different ports, configure CORS on the server.
+Navbar shows before login
+Render it only when !loading && isAuthenticated.
+📝 License
 MIT
-
----
